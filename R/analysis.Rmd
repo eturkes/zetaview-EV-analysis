@@ -7,3 +7,379 @@ knit: (function(inputFile, encoding) {
     output_file = file.path("..", "results", "analysis.html")
   )})
 ---
+
+Timepoint and tau seeding analysis of extracellular vesicles in Alzheimer's Disease.
+All source code can be found at [https://github.com/eturkes/zetaview-EV-analysis](https://github.com/eturkes/zetaview-EV-analysis).
+
+```{r}
+# Global settings.
+# Needs to be in a separate chunk to apply to all other chunks.
+# -------------------------------------------------------------
+knitr::opts_chunk$set(fig.width = 7, fig.height = 5, dpi = 300) # Output high-quality figs.
+# -------------------------------------------------------------
+```
+
+```{r}
+# Load required packages.
+# -----------------------
+library(reshape2)
+library(ggplot2)
+library(ggbeeswarm)
+library(plyr)
+# -----------------------
+
+# Add required functions.
+# -----------------------
+# The following section is modified from content on STHDA:
+# http://www.sthda.com/english/wiki/ggplot2-error-bars-quick-start-guide-r-software-and-data-visualization
+# This function is used to calculate the standard deviation among timepoints / seeding status of the EV
+# proportion at each size.
+# This standard deviation is used to create error bars in the histograms.
+# --------------------------------------------------------------------------------------------------------
+data_summary <- function(data, varname, groupnames){
+  summary_func <- function(x, col){
+    c(mean = mean(x[[col]], na.rm=TRUE),
+      sd = sd(x[[col]], na.rm=TRUE))
+  }
+  data_sum<-ddply(data, groupnames, .fun=summary_func,
+                  varname)
+  data_sum <- rename(data_sum, c("mean" = varname))
+  return(data_sum)
+}
+# --------------------------------------------------------------------------------------------------------
+# -----------------------
+
+# Commonly used paths.
+# --------------------
+data_dir <- file.path("..", "data")
+# --------------------
+
+# The Zetaview data is spread out across many files, so we must aggregate them to obtain a single data object.
+# ------------------------------------------------------------------------------------------------------------
+file_list <- list.files(file.path(data_dir))
+
+data <- data.frame(matrix(nrow = 1200, ncol = length(file_list)) + 1)
+for (i in seq_along(file_list)) {
+  file <- read.delim(file.path(data_dir, file_list[i]), skip = 76) # Skip metadata lines.
+  if (i == 1) {
+    data[ , i] <- file[1:1200, 1] # Use first sample to add particle sizes to the data object.
+  }
+  data[ , i + 1] <- file[1:1200, 2]
+}
+rm(file)
+# ------------------------------------------------------------------------------------------------------------
+
+# Use Zetaview filenames to name data columns.
+# --------------------------------------------
+colnames(data) <- c(
+  "size",
+  paste(
+    sub("^[^_]*_[^_]*_[^_]*_([^_]*).*", replacement = "\\1", x = file_list),
+    sub("^[^_]*_[^_]*_[^_]*_[^_]*_([^_]*).*", replacement = "\\1", x = file_list),
+    sub("^[^_]*_[^_]*_[^_]*_[^_]*_[^_]*_[^_]*_[^_]*_([^_]*).*", replacement = "\\1", x = file_list),
+    sub("^[^_]*_[^_]*_[^_]*_[^_]*_[^_]*_[^_]*_[^_]*_[^_]*_([^_]*).*", replacement = "\\1", x = file_list),
+    sub(
+      "^[^_]*_[^_]*_[^_]*_[^_]*_[^_]*_[^_]*_[^_]*_[^_]*_[^_]*_[^_]*_[^_]*_[^_]*_([^_]*).*", replacement = "\\1",
+      x = file_list
+    ),
+    sep = "_"
+  )
+)
+# --------------------------------------------
+
+# Subset to the particle size range.
+# ----------------------------------
+non_zero <- which(rowSums(data[ , -1]) > 0)
+data <- data[min(non_zero):max(non_zero), ]
+# ----------------------------------
+
+# Create a dataset where only technical replicates of donors are aggregated by summing their counts.
+# This is different from the aggregation performed on concentration data, which uses the mean.
+# Using the sum retains integer values and since the data will be used to find the mode, it is not an issue if
+# some timepoints have a greater number of absolute counts.
+# ------------------------------------------------------------------------------------------------------------
+names <- unique(sub("_[^_]+$", replacement = "", x = colnames(data[ , -1])))
+aggregated_data <- data.frame(matrix(nrow = nrow(data), ncol = length(names) + 1))
+aggregated_data$X1 <- data$size
+for (i in seq_along(names)) {
+  data_sub <- data[ , which(sub("_[^_]+$", replacement = "", x = colnames(data)) %in% names[i])]
+  aggregated_data[ , i + 1] <- rowSums(data_sub)
+}
+colnames(aggregated_data) <- c("size", names)
+# ------------------------------------------------------------------------------------------------------------
+
+# Calculate and add mode of each timepoint.
+# -----------------------------------------
+stats <- data.frame(matrix(nrow = 1, ncol = ncol(aggregated_data) - 1))
+colnames(stats) <- colnames(aggregated_data[ , -1])
+rownames(stats) <- "Mode"
+
+counts_per_size <- vector("list", length = ncol(aggregated_data) - 1)
+for (i in seq_along(counts_per_size)) {
+  counts_per_size[[i]] <- rep(aggregated_data[ , 1], times = aggregated_data[ , i + 1])
+  stats[1, i] <- as.numeric( # Mode calculation.
+    names(table(counts_per_size[[i]]))[table(counts_per_size[[i]]) == max(table(counts_per_size[[i]]))]
+  )[1]
+}
+# -----------------------------------------
+
+# Prep the data for plotting.
+# ---------------------------
+molten_data <- as.data.frame(t(stats))
+molten_data$`Timepoint by Seeds` <- rownames(molten_data)
+molten_data <- melt(molten_data, id.vars = "Timepoint by Seeds")
+colnames(molten_data) <- c("Timepoint by Seeds", "Statistic", "Diameter")
+molten_data$Timepoint <- paste(
+  sub("^([^_]*).*", replacement = "\\1", x = molten_data$`Timepoint by Seeds`),
+  sub("^[^_]*_([^_]*).*", replacement = "\\1", x = molten_data$`Timepoint by Seeds`),
+  sep = "_"
+)
+molten_data$Seeds <- paste(
+  sub("^[^_]*_[^_]*_([^_]*).*", replacement = "\\1", x = molten_data$`Timepoint by Seeds`),
+  sub("^[^_]*_[^_]*_[^_]*_([^_]*).*", replacement = "\\1", x = molten_data$`Timepoint by Seeds`),
+  sep = "_"
+)
+# ---------------------------
+
+# Create box and whisker plots.
+# -----------------------------
+ggplot(molten_data, aes(Timepoint, Diameter)) +
+  stat_boxplot(geom = "errorbar", width = 0.5) +
+  geom_boxplot(fill = "#F2F3F4", outlier.shape = NA, fatten = NULL, coef = 0) +
+  stat_summary(fun = mean, geom = "errorbar", aes(ymax = after_stat(y), ymin = after_stat(y)), width = 0.75) +
+  geom_beeswarm(aes(fill = Seeds), size = 4, pch = 21, cex = 2) +
+  labs(title = "EV Diameter", y = "Diameter (nm)") +
+  theme_light() +
+  theme(plot.title = element_text(hjust = 0.5)) +
+  scale_y_continuous(
+    breaks = seq(floor(min(molten_data$Diameter)), ceiling(max(molten_data$Diameter)), by = 2),
+    limits = c(floor(min(molten_data$Diameter)), ceiling(max(molten_data$Diameter)))
+  )
+
+ggplot(molten_data, aes(Seeds, Diameter)) +
+  stat_boxplot(geom = "errorbar", width = 0.5) +
+  geom_boxplot(fill = "#F2F3F4", outlier.shape = NA, fatten = NULL, coef = 0) +
+  stat_summary(fun = mean, geom = "errorbar", aes(ymax = after_stat(y), ymin = after_stat(y)), width = 0.75) +
+  geom_beeswarm(aes(fill = Timepoint), size = 4, pch = 21, cex = 2) +
+  labs(title = "EV Diameter", y = "Diameter (nm)") +
+  theme_light() +
+  theme(plot.title = element_text(hjust = 0.5)) +
+  scale_y_continuous(
+    breaks = seq(floor(min(molten_data$Diameter)), ceiling(max(molten_data$Diameter)), by = 2),
+    limits = c(floor(min(molten_data$Diameter)), ceiling(max(molten_data$Diameter)))
+  )
+# -----------------------------
+
+# Create a dataset where replicates of each timepoint are summed together.
+# ------------------------------------------------------------------------
+names <- unique(
+  paste(
+    sub("^([^_]*).*", replacement = "\\1", x = colnames(data[ , -1])),
+    sub("^[^_]*_([^_]*).*", replacement = "\\1", x = colnames(data[ , -1])),
+    sep = "_"
+  )
+)
+summed_data <- data.frame(matrix(nrow = nrow(data), ncol = length(names) + 1))
+summed_data$X1 <- data$size
+for (i in seq_along(names)) {
+  data_sub <- data[
+    , which(
+      paste(
+        sub("^([^_]*).*", replacement = "\\1", x = colnames(data)),
+        sub("^[^_]*_([^_]*).*", replacement = "\\1", x = colnames(data)),
+        sep = "_"
+      ) %in% names[i]
+    )
+  ]
+  summed_data[ , i + 1] <- rowSums(data_sub)
+}
+colnames(summed_data) <- c("size", names)
+# ------------------------------------------------------------------------
+
+# Convert counts into proportion values.
+# --------------------------------------
+summed_data_proportion <- summed_data
+for (i in seq_along(colnames(summed_data_proportion))) {
+  if (i != 1) { # The first column contains sizes not counts.
+    summed_data_proportion[i] <- summed_data_proportion[i] / max(summed_data_proportion[i])
+  }
+}
+# --------------------------------------
+
+# Prep the data for plotting.
+# ---------------------------
+data_sub <- summed_data_proportion[1:which(summed_data_proportion$size == 397.5), ] # Values level off at ~400nm.
+molten_data <- melt(data_sub[ , -1], id.vars = NULL)
+colnames(molten_data) <- c("Timepoint", "Proportion")
+molten_data$Size <- rep(data_sub$size, times = ncol(data_sub) - 1)
+# ---------------------------
+
+# Add the standard deviation.
+# ---------------------------
+stats <- data_summary(molten_data, varname = "Proportion", groupnames = "Size")
+molten_data$SD <- rep(stats$sd, length(unique(molten_data$Timepoint)))
+# ---------------------------
+
+# Create the plot.
+# ----------------
+ggplot(molten_data, aes(Size, Proportion, group = Timepoint, color = Timepoint)) +
+  geom_smooth(se = FALSE, span = 0.2) +
+  geom_point(size = 0.75) +
+  geom_errorbar(
+    aes(ymin = Proportion - SD, ymax = Proportion + SD), linewidth = 0.2,
+    position = position_dodge(0.05), color = "darkgrey"
+  ) +
+  theme_light() +
+  ylab("Relative proportion of EVs per timepoint") +
+  xlab("Diameter (nm)") +
+  scale_x_continuous(breaks = seq(0, max(molten_data$Size), by = 20)) +
+  scale_y_continuous(
+    breaks = seq(0, max(molten_data$Proportion), by = 0.1),
+    limits = c(0, max(molten_data$Proportion))
+  )
+# ----------------
+
+# Create a dataset where replicates of each seeding status are summed together.
+# -----------------------------------------------------------------------------
+names <- unique(
+  paste(
+    sub("^[^_]*_[^_]*_([^_]*).*", replacement = "\\1", x = colnames(data[ , -1])),
+    sub("^[^_]*_[^_]*_[^_]*_([^_]*).*", replacement = "\\1", x = colnames(data[ , -1])),
+    sep = "_"
+  )
+)
+summed_data <- data.frame(matrix(nrow = nrow(data), ncol = length(names) + 1))
+summed_data$X1 <- data$size
+for (i in seq_along(names)) {
+  data_sub <- data[
+    , which(
+      paste(
+        sub("^[^_]*_[^_]*_([^_]*).*", replacement = "\\1", x = colnames(data)),
+        sub("^[^_]*_[^_]*_[^_]*_([^_]*).*", replacement = "\\1", x = colnames(data)),
+        sep = "_"
+      ) %in% names[i]
+    )
+  ]
+  summed_data[ , i + 1] <- rowSums(data_sub)
+}
+colnames(summed_data) <- c("size", names)
+# -----------------------------------------------------------------------------
+
+# Convert counts into proportion values.
+# --------------------------------------
+summed_data_proportion <- summed_data
+for (i in seq_along(colnames(summed_data_proportion))) {
+  if (i != 1) { # The first column contains sizes not counts.
+    summed_data_proportion[i] <- summed_data_proportion[i] / max(summed_data_proportion[i])
+  }
+}
+# --------------------------------------
+
+# Prep the data for plotting.
+# ---------------------------
+data_sub <- summed_data_proportion[1:which(summed_data_proportion$size == 397.5), ] # Values level off at ~400nm.
+molten_data <- melt(data_sub[ , -1], id.vars = NULL)
+colnames(molten_data) <- c("Seeds", "Proportion")
+molten_data$Size <- rep(data_sub$size, times = ncol(data_sub) - 1)
+# ---------------------------
+
+# Add the standard deviation.
+# ---------------------------
+stats <- data_summary(molten_data, varname = "Proportion", groupnames = "Size")
+molten_data$SD <- rep(stats$sd, length(unique(molten_data$Seeds)))
+# ---------------------------
+
+# Create the plot.
+# ----------------
+ggplot(molten_data, aes(Size, Proportion, group = Seeds, color = Seeds)) +
+  geom_smooth(se = FALSE, span = 0.2) +
+  geom_point(size = 0.75) +
+  geom_errorbar(
+    aes(ymin = Proportion - SD, ymax = Proportion + SD), linewidth = 0.2,
+    position = position_dodge(0.05), color = "darkgrey"
+  ) +
+  theme_light() +
+  ylab("Relative proportion of EVs per seeding status") +
+  xlab("Diameter (nm)") +
+  scale_x_continuous(breaks = seq(0, max(molten_data$Size), by = 20)) +
+  scale_y_continuous(
+    breaks = seq(0, max(molten_data$Proportion), by = 0.1),
+    limits = c(0, max(molten_data$Proportion))
+  )
+# ----------------
+
+# Create a dataset where replicates of each timepoint by seeding status are summed together.
+# ------------------------------------------------------------------------------------------
+names <- unique(
+  paste(
+    sub("^([^_]*).*", replacement = "\\1", x = colnames(data[ , -1])),
+    sub("^[^_]*_([^_]*).*", replacement = "\\1", x = colnames(data[ , -1])),
+    sub("^[^_]*_[^_]*_([^_]*).*", replacement = "\\1", x = colnames(data[ , -1])),
+    sub("^[^_]*_[^_]*_[^_]*_([^_]*).*", replacement = "\\1", x = colnames(data[ , -1])),
+    sep = "_"
+  )
+)
+summed_data <- data.frame(matrix(nrow = nrow(data), ncol = length(names) + 1))
+summed_data$X1 <- data$size
+for (i in seq_along(names)) {
+  data_sub <- data[
+    , which(
+      paste(
+        sub("^([^_]*).*", replacement = "\\1", x = colnames(data)),
+        sub("^[^_]*_([^_]*).*", replacement = "\\1", x = colnames(data)),
+        sub("^[^_]*_[^_]*_([^_]*).*", replacement = "\\1", x = colnames(data)),
+        sub("^[^_]*_[^_]*_[^_]*_([^_]*).*", replacement = "\\1", x = colnames(data)),
+        sep = "_"
+      ) %in% names[i]
+    )
+  ]
+  summed_data[ , i + 1] <- rowSums(data_sub)
+}
+colnames(summed_data) <- c("size", names)
+# ------------------------------------------------------------------------------------------
+
+# Convert counts into proportion values.
+# --------------------------------------
+summed_data_proportion <- summed_data
+for (i in seq_along(colnames(summed_data_proportion))) {
+  if (i != 1) { # The first column contains sizes not counts.
+    summed_data_proportion[i] <- summed_data_proportion[i] / max(summed_data_proportion[i])
+  }
+}
+# --------------------------------------
+
+# Prep the data for plotting.
+# ---------------------------
+data_sub <- summed_data_proportion[1:which(summed_data_proportion$size == 397.5), ] # Values level off at ~400nm.
+molten_data <- melt(data_sub[ , -1], id.vars = NULL)
+colnames(molten_data) <- c("Timepoint by Seeds", "Proportion")
+molten_data$Size <- rep(data_sub$size, times = ncol(data_sub) - 1)
+# ---------------------------
+
+# Add the standard deviation.
+# ---------------------------
+stats <- data_summary(molten_data, varname = "Proportion", groupnames = "Size")
+molten_data$SD <- rep(stats$sd, length(unique(molten_data$`Timepoint by Seeds`)))
+# ---------------------------
+```
+
+```{r, fig.width = 8}
+# Create the plot.
+# ----------------
+ggplot(molten_data, aes(Size, Proportion, group = `Timepoint by Seeds`, color = `Timepoint by Seeds`)) +
+  geom_smooth(se = FALSE, span = 0.2) +
+  geom_point(size = 0.75) +
+  geom_errorbar(
+    aes(ymin = Proportion - SD, ymax = Proportion + SD), linewidth = 0.2,
+    position = position_dodge(0.05), color = "darkgrey"
+  ) +
+  theme_light() +
+  ylab("Relative proportion of EVs per timepoint by seeding status") +
+  xlab("Diameter (nm)") +
+  scale_x_continuous(breaks = seq(0, max(molten_data$Size), by = 20)) +
+  scale_y_continuous(
+    breaks = seq(0, max(molten_data$Proportion), by = 0.1),
+    limits = c(0, max(molten_data$Proportion))
+  )
+# ----------------
+```
