@@ -93,7 +93,8 @@ non_zero <- which(rowSums(data[ , -1]) > 0)
 data <- data[min(non_zero):max(non_zero), ]
 # ----------------------------------
 
-# Create a dataset where only technical replicates of donors are aggregated by summing their counts.
+# Create a dataset where technical replicates of timepoint by seeding status samples are aggregated by summing
+# their counts.
 # This is different from the aggregation performed on concentration data, which uses the mean.
 # Using the sum retains integer values and since the data will be used to find the mode, it is not an issue if
 # some timepoints have a greater number of absolute counts.
@@ -108,8 +109,8 @@ for (i in seq_along(names)) {
 colnames(aggregated_data) <- c("size", names)
 # ------------------------------------------------------------------------------------------------------------
 
-# Calculate and add mode of each timepoint.
-# -----------------------------------------
+# Calculate and add mode of each timepoint by seeding status sample.
+# ------------------------------------------------------------------
 stats <- data.frame(matrix(nrow = 1, ncol = ncol(aggregated_data) - 1))
 colnames(stats) <- colnames(aggregated_data[ , -1])
 rownames(stats) <- "Mode"
@@ -121,7 +122,7 @@ for (i in seq_along(counts_per_size)) {
     names(table(counts_per_size[[i]]))[table(counts_per_size[[i]]) == max(table(counts_per_size[[i]]))]
   )[1]
 }
-# -----------------------------------------
+# ------------------------------------------------------------------
 
 # Prep the data for plotting.
 # ---------------------------
