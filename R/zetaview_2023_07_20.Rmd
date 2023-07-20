@@ -1,0 +1,126 @@
+---
+title: "Zetaview HEK Cell EV Analysis - 2023/07/20"
+knit: (function(inputFile, encoding) {
+  rmarkdown::render(
+    inputFile,
+    encoding = encoding,
+    output_file = file.path("..", "results", "zetaview_2023_07_20.html")
+  )})
+---
+
+Zetaview particle analysis of fractionated EVs derived from tau seeded HEK cells.
+This analysis covers an additional run of fraction 4 samples.
+All source code can be found at [https://github.com/eturkes/zetaview-EV-analysis](https://github.com/eturkes/zetaview-EV-analysis).
+
+```{r}
+# Global settings.
+# Needs to be in a separate chunk to apply to all other chunks.
+# -------------------------------------------------------------
+knitr::opts_chunk$set(fig.width = 7, fig.height = 5, dpi = 300) # Output high-quality figs.
+# -------------------------------------------------------------
+```
+
+```{r}
+# Load required packages.
+# -----------------------
+library(reshape2)
+library(ggplot2)
+library(ggbeeswarm)
+library(plyr)
+# -----------------------
+
+# Add required functions.
+# -----------------------
+# The following section is modified from content on STHDA:
+# http://www.sthda.com/english/wiki/ggplot2-error-bars-quick-start-guide-r-software-and-data-visualization
+# This function is used to calculate the standard deviation among timepoints / seeding status of the EV
+# proportion at each size.
+# This standard deviation is used to create error bars in the histograms.
+# --------------------------------------------------------------------------------------------------------
+data_summary <- function(data, varname, groupnames){
+  summary_func <- function(x, col){
+    c(mean = mean(x[[col]], na.rm=TRUE),
+      sd = sd(x[[col]], na.rm=TRUE))
+  }
+  data_sum<-ddply(data, groupnames, .fun=summary_func,
+                  varname)
+  data_sum <- rename(data_sum, c("mean" = varname))
+  return(data_sum)
+}
+# --------------------------------------------------------------------------------------------------------
+# -----------------------
+
+# Commonly used paths.
+# --------------------
+data_dir <- file.path("..", "data", "2023_07_20")
+# --------------------
+
+# The Zetaview data is spread out across many files, so we must aggregate them to obtain a single data object.
+# ------------------------------------------------------------------------------------------------------------
+file_list <- list.files(file.path(data_dir))
+
+data <- data.frame(matrix(nrow = 1200, ncol = length(file_list)) + 1)
+for (i in seq_along(file_list)) {
+  file <- read.delim(file.path(data_dir, file_list[i]), skip = 76) # Skip metadata lines.
+  if (i == 1) {
+    data[ , i] <- file[1:1200, 1] # Use first sample to add particle sizes to the data object.
+  }
+  data[ , i + 1] <- file[1:1200, 2]
+}
+rm(file)
+# ------------------------------------------------------------------------------------------------------------
+
+# Use Zetaview filenames to name data columns.
+# --------------------------------------------
+colnames(data) <- c("size", seq(5))
+# --------------------------------------------
+
+# Subset to the particle size range.
+# ----------------------------------
+non_zero <- which(rowSums(data[ , -1]) > 0)
+data <- data[min(non_zero):max(non_zero), ]
+# ----------------------------------
+
+# Convert counts into proportion values.
+# --------------------------------------
+data_proportion <- data
+for (i in seq_along(colnames(data_proportion))) {
+  if (i != 1) { # The first column contains sizes not counts.
+    data_proportion[i] <- data_proportion[i] / max(data_proportion[i])
+  }
+}
+# --------------------------------------
+
+# Prep the data for plotting.
+# ---------------------------
+data_sub <- data_proportion[1:which(data_proportion$size == 397.5), ] # Values level off at ~400nm.
+molten_data <- melt(data_sub[ , -1], id.vars = NULL)
+colnames(molten_data) <- c("Replicate", "Proportion")
+molten_data$Size <- rep(data_sub$size, times = ncol(data_sub) - 1)
+# ---------------------------
+
+# Add the standard deviation.
+# ---------------------------
+stats <- data_summary(molten_data, varname = "Proportion", groupnames = "Size")
+molten_data$SD <- rep(stats$sd, length(unique(molten_data$Replicate)))
+# ---------------------------
+
+# Create the plot.
+# ----------------
+ggplot(molten_data, aes(Size, Proportion, group = Replicate, color = Replicate)) +
+  geom_smooth(se = FALSE, span = 0.2) +
+  geom_point(size = 0.75) +
+  geom_errorbar(
+    aes(ymin = Proportion - SD, ymax = Proportion + SD), linewidth = 0.2,
+    position = position_dodge(0.05), color = "darkgrey"
+  ) +
+  theme_light() +
+  ylab("Relative proportion of EVs") +
+  xlab("Diameter (nm)") +
+  scale_x_continuous(breaks = seq(0, max(molten_data$Size), by = 20)) +
+  scale_y_continuous(
+    breaks = seq(0, max(molten_data$Proportion), by = 0.1),
+    limits = c(0, max(molten_data$Proportion))
+  )
+# ----------------
+```

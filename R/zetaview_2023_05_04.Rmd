@@ -1,14 +1,14 @@
 ---
-title: "Zetaview EV Analysis"
+title: "Zetaview HEK Cell EV Analysis - 2023/05/04"
 knit: (function(inputFile, encoding) {
   rmarkdown::render(
     inputFile,
     encoding = encoding,
-    output_file = file.path("..", "results", "analysis.html")
+    output_file = file.path("..", "results", "zetaview_2023_05_04.html")
   )})
 ---
 
-Timepoint and tau seeding analysis of extracellular vesicles in Alzheimer's Disease.
+Zetaview particle analysis of fractionated EVs derived from tau seeded HEK cells.
 All source code can be found at [https://github.com/eturkes/zetaview-EV-analysis](https://github.com/eturkes/zetaview-EV-analysis).
 
 ```{r}
@@ -51,7 +51,7 @@ data_summary <- function(data, varname, groupnames){
 
 # Commonly used paths.
 # --------------------
-data_dir <- file.path("..", "data")
+data_dir <- file.path("..", "data", "2023_05_04")
 # --------------------
 
 # The Zetaview data is spread out across many files, so we must aggregate them to obtain a single data object.
