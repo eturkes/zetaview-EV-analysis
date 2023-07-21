@@ -27,6 +27,7 @@ library(reshape2)
 library(ggplot2)
 library(ggbeeswarm)
 library(plyr)
+library(DT)
 # -----------------------
 
 # Add required functions.
@@ -48,6 +49,25 @@ data_summary <- function(data, varname, groupnames){
   return(data_sum)
 }
 # --------------------------------------------------------------------------------------------------------
+
+#' Adds download buttons and horizontal scrolling to \code{"DT::datatable"}.
+#'
+#' @param dt A data.table object.
+#' @examples
+#' datatable_download(dt = data_table)
+#'
+datatable_download <- function(dt) {
+  datatable(
+    dt,
+    list(
+      scrollX = TRUE, dom = "Blfrtip",
+      buttons = list(
+        "copy", "print", list(extend = "collection", buttons = c("csv", "excel", "pdf"), text = "Download")
+      )
+    ),
+    extensions = "Buttons"
+  )
+}
 # -----------------------
 
 # Commonly used paths.
@@ -80,6 +100,26 @@ colnames(data) <- c("size", seq(5))
 non_zero <- which(rowSums(data[ , -1]) > 0)
 data <- data[min(non_zero):max(non_zero), ]
 # ----------------------------------
+
+# Calculate basic summary statistics.
+# -----------------------------------
+stats <- data.frame(matrix(nrow = 6, ncol = ncol(data) - 1))
+colnames(stats) <- paste("Replicate", colnames(data[ , -1]), sep = " ")
+rownames(stats) <- c("Mean", "Median", "Mode", "D10", "D50", "D90")
+
+counts_per_sample <- vector("list", ncol(data) - 1)
+for (i in seq_along(counts_per_sample)) {
+  counts_per_sample[[i]] <- rep(data[ , 1], data[ , i + 1])
+  stats[1, i] <- mean(counts_per_sample[[i]])
+  stats[2, i] <- median(counts_per_sample[[i]])
+  stats[3, i] <- as.numeric(names(table(counts_per_sample[[i]]))[
+    table(counts_per_sample[[i]]) == max(table(counts_per_sample[[i]]))
+  ])[1]
+  stats[4:6, i] <- as.numeric(quantile(counts_per_sample[[i]], probs = c(0.1, 0.5, 0.9)))
+}
+
+datatable_download(stats)
+# -----------------------------------
 
 # Convert counts into proportion values.
 # --------------------------------------
@@ -132,6 +172,26 @@ summed_data$X1 <- data$size
 summed_data$X2 <- rowSums(data[ , -1])
 colnames(summed_data) <- c("size", names)
 # ------------------------------------------------------
+
+# Calculate basic summary statistics.
+# -----------------------------------
+stats <- data.frame(matrix(nrow = 6, ncol = ncol(summed_data) - 1))
+colnames(stats) <- "Sample"
+rownames(stats) <- c("Mean", "Median", "Mode", "D10", "D50", "D90")
+
+counts_per_sample <- vector("list", ncol(summed_data) - 1)
+for (i in seq_along(counts_per_sample)) {
+  counts_per_sample[[i]] <- rep(summed_data[ , 1], summed_data[ , i + 1])
+  stats[1, i] <- mean(counts_per_sample[[i]])
+  stats[2, i] <- median(counts_per_sample[[i]])
+  stats[3, i] <- as.numeric(names(table(counts_per_sample[[i]]))[
+    table(counts_per_sample[[i]]) == max(table(counts_per_sample[[i]]))
+  ])[1]
+  stats[4:6, i] <- as.numeric(quantile(counts_per_sample[[i]], probs = c(0.1, 0.5, 0.9)))
+}
+
+datatable_download(stats)
+# -----------------------------------
 
 # Convert counts into proportion values.
 # --------------------------------------
