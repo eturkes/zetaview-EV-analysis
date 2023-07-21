@@ -123,4 +123,46 @@ ggplot(molten_data, aes(Size, Proportion, group = Replicate, color = Replicate))
     limits = c(0, max(molten_data$Proportion))
   )
 # ----------------
+
+# Create a dataset where replicates are summed together.
+# ------------------------------------------------------
+names <- "Sample"
+summed_data <- data.frame(matrix(nrow = nrow(data), ncol = length(names) + 1))
+summed_data$X1 <- data$size
+summed_data$X2 <- rowSums(data[ , -1])
+colnames(summed_data) <- c("size", names)
+# ------------------------------------------------------
+
+# Convert counts into proportion values.
+# --------------------------------------
+summed_data_proportion <- summed_data
+for (i in seq_along(colnames(summed_data_proportion))) {
+  if (i != 1) { # The first column contains sizes not counts.
+    summed_data_proportion[i] <- summed_data_proportion[i] / max(summed_data_proportion[i])
+  }
+}
+# --------------------------------------
+
+# Prep the data for plotting.
+# ---------------------------
+data_sub <- summed_data_proportion[1:which(summed_data_proportion$size == 397.5), ] # Values level off at ~400nm.
+molten_data <- melt(data_sub[ , -1], id.vars = NULL)
+colnames(molten_data) <- "Proportion"
+molten_data$Size <- rep(data_sub$size, times = ncol(data_sub) - 1)
+# ---------------------------
+
+# Create the plot.
+# ----------------
+ggplot(molten_data, aes(Size, Proportion)) +
+  geom_smooth(se = FALSE, span = 0.2) +
+  geom_point(size = 0.75) +
+  theme_light() +
+  ylab("Relative proportion of EVs per timepoint") +
+  xlab("Diameter (nm)") +
+  scale_x_continuous(breaks = seq(0, max(molten_data$Size), by = 20)) +
+  scale_y_continuous(
+    breaks = seq(0, max(molten_data$Proportion), by = 0.1),
+    limits = c(0, max(molten_data$Proportion))
+  )
+# ----------------
 ```
