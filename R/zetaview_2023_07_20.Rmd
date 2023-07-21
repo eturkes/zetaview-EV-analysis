@@ -16,7 +16,7 @@ All source code can be found at [https://github.com/eturkes/zetaview-EV-analysis
 # Global settings.
 # Needs to be in a separate chunk to apply to all other chunks.
 # -------------------------------------------------------------
-knitr::opts_chunk$set(fig.width = 7, fig.height = 5, dpi = 300) # Output high-quality figs.
+knitr::opts_chunk$set(fig.width = 9, fig.height = 5, dpi = 300) # Output high-quality figs.
 # -------------------------------------------------------------
 ```
 
@@ -93,7 +93,7 @@ for (i in seq_along(colnames(data_proportion))) {
 
 # Prep the data for plotting.
 # ---------------------------
-data_sub <- data_proportion[1:which(data_proportion$size == 397.5), ] # Values level off at ~400nm.
+data_sub <- data_proportion[1:which(data_proportion$size == 497.5), ] # Values level off at ~500nm.
 molten_data <- melt(data_sub[ , -1], id.vars = NULL)
 colnames(molten_data) <- c("Replicate", "Proportion")
 molten_data$Size <- rep(data_sub$size, times = ncol(data_sub) - 1)
@@ -145,12 +145,14 @@ for (i in seq_along(colnames(summed_data_proportion))) {
 
 # Prep the data for plotting.
 # ---------------------------
-data_sub <- summed_data_proportion[1:which(summed_data_proportion$size == 397.5), ] # Values level off at ~400nm.
+data_sub <- summed_data_proportion[1:which(summed_data_proportion$size == 497.5), ] # Values level off at ~500nm.
 molten_data <- melt(data_sub[ , -1], id.vars = NULL)
 colnames(molten_data) <- "Proportion"
 molten_data$Size <- rep(data_sub$size, times = ncol(data_sub) - 1)
 # ---------------------------
+```
 
+```{r, fig.width = 8}
 # Create the plot.
 # ----------------
 ggplot(molten_data, aes(Size, Proportion)) +
