@@ -15,7 +15,7 @@ All source code can be found at [https://github.com/eturkes/zetaview-EV-analysis
 # Global settings.
 # Needs to be in a separate chunk to apply to all other chunks.
 # -------------------------------------------------------------
-knitr::opts_chunk$set(fig.width = 9, fig.height = 5, dpi = 300) # Output high-quality figs.
+knitr::opts_chunk$set(fig.width = 9, fig.height = 5, dpi = 300, dev = "svglite") # Output high-quality figs.
 # -------------------------------------------------------------
 ```
 
