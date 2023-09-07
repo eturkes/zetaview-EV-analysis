@@ -185,11 +185,11 @@ summed_data$X1 <- data$size
 for (i in seq_along(names)) {
   data_sub <- data[
     , which(
-      paste(
-        sub("^([^_]*).*", replacement = "\\1", x = colnames(data)),
-        sub("^[^_]*_([^_]*).*", replacement = "\\1", x = colnames(data)),
-        sep = "_"
-      ) %in% names[i]
+        paste(
+          sub("^([^_]*).*", replacement = "\\1", x = colnames(data)),
+          sub("^[^_]*_([^_]*).*", replacement = "\\1", x = colnames(data)),
+          sep = "_"
+        ) %in% names[i]
     )
   ]
   summed_data[ , i + 1] <- rowSums(data_sub)
@@ -254,11 +254,11 @@ summed_data$X1 <- data$size
 for (i in seq_along(names)) {
   data_sub <- data[
     , which(
-      paste(
-        sub("^[^_]*_[^_]*_([^_]*).*", replacement = "\\1", x = colnames(data)),
-        sub("^[^_]*_[^_]*_[^_]*_([^_]*).*", replacement = "\\1", x = colnames(data)),
-        sep = "_"
-      ) %in% names[i]
+        paste(
+          sub("^[^_]*_[^_]*_([^_]*).*", replacement = "\\1", x = colnames(data)),
+          sub("^[^_]*_[^_]*_[^_]*_([^_]*).*", replacement = "\\1", x = colnames(data)),
+          sep = "_"
+        ) %in% names[i]
     )
   ]
   summed_data[ , i + 1] <- rowSums(data_sub)
@@ -325,13 +325,13 @@ summed_data$X1 <- data$size
 for (i in seq_along(names)) {
   data_sub <- data[
     , which(
-      paste(
-        sub("^([^_]*).*", replacement = "\\1", x = colnames(data)),
-        sub("^[^_]*_([^_]*).*", replacement = "\\1", x = colnames(data)),
-        sub("^[^_]*_[^_]*_([^_]*).*", replacement = "\\1", x = colnames(data)),
-        sub("^[^_]*_[^_]*_[^_]*_([^_]*).*", replacement = "\\1", x = colnames(data)),
-        sep = "_"
-      ) %in% names[i]
+        paste(
+          sub("^([^_]*).*", replacement = "\\1", x = colnames(data)),
+          sub("^[^_]*_([^_]*).*", replacement = "\\1", x = colnames(data)),
+          sub("^[^_]*_[^_]*_([^_]*).*", replacement = "\\1", x = colnames(data)),
+          sub("^[^_]*_[^_]*_[^_]*_([^_]*).*", replacement = "\\1", x = colnames(data)),
+          sep = "_"
+        ) %in% names[i]
     )
   ]
   summed_data[ , i + 1] <- rowSums(data_sub)
