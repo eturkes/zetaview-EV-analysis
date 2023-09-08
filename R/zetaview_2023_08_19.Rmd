@@ -170,8 +170,8 @@ molten_data$Size <- rep(data_sub$size, times = ncol(data_sub) - 1)
 
 # Add the standard deviation.
 # ---------------------------
-stats <- data_summary(molten_data, varname = "Proportion", groupnames = "Size")
-molten_data$SD <- rep(stats$sd, length(unique(molten_data$Density)))
+sd <- data_summary(molten_data, varname = "Proportion", groupnames = "Size")
+molten_data$SD <- rep(sd$sd, length(unique(molten_data$Density)))
 # ---------------------------
 
 # Create the plot.
@@ -193,53 +193,34 @@ ggplot(molten_data, aes(Size, Proportion, group = Density, color = Density)) +
   )
 # ----------------
 
-# Prep the data for plotting.
-# ---------------------------
-molten_data_sub <- molten_data[molten_data[[1]] == names[1], ]
-# ---------------------------
+for (i in seq_along(names)) {
+  # Prep the data for plotting.
+  # ---------------------------
+  molten_data_sub <- molten_data[molten_data[[1]] == names[i], ]
+  # ---------------------------
 
-# Create the plot.
-# ----------------
-ggplot(molten_data_sub, aes(Size, Proportion, group = Density, color = Density)) +
-  geom_smooth(se = FALSE, span = 0.2) +
-  geom_point(size = 0.75) +
-  geom_errorbar(
-    aes(ymin = Proportion - SD, ymax = Proportion + SD), linewidth = 0.2,
-    position = position_dodge(0.05), color = "darkgrey"
-  ) +
-  theme_light() +
-  ylab("Relative proportion of EVs per density") +
-  xlab("Diameter (nm)") +
-  scale_x_continuous(breaks = seq(0, max(molten_data_sub$Size), by = 20)) +
-  scale_y_continuous(
-    breaks = seq(0, max(molten_data_sub$Proportion), by = 0.1),
-    limits = c(0, max(molten_data_sub$Proportion))
+  # Create the plot.
+  # ----------------
+  print(
+    ggplot(molten_data_sub, aes(Size, Proportion, group = Density, color = Density)) +
+      geom_smooth(se = FALSE, span = 0.2) +
+      geom_point(size = 0.75) +
+      geom_errorbar(
+        aes(ymin = Proportion - SD, ymax = Proportion + SD), linewidth = 0.2,
+        position = position_dodge(0.05), color = "darkgrey"
+      ) +
+      theme_light() +
+      ylab("Relative proportion of EVs per density") +
+      xlab("Diameter (nm)") +
+      scale_x_continuous(breaks = seq(0, max(molten_data_sub$Size), by = 20)) +
+      scale_y_continuous(
+        breaks = seq(0, max(molten_data_sub$Proportion), by = 0.1),
+        limits = c(0, max(molten_data_sub$Proportion))
+      ) +
+      geom_vline(xintercept = c(stats[4, i], stats[3, i], stats[6, i]))
   )
-# ----------------
-
-# Prep the data for plotting.
-# ---------------------------
-molten_data_sub <- molten_data[molten_data[[1]] == names[2], ]
-# ---------------------------
-
-# Create the plot.
-# ----------------
-ggplot(molten_data_sub, aes(Size, Proportion, group = Density, color = Density)) +
-  geom_smooth(se = FALSE, span = 0.2) +
-  geom_point(size = 0.75) +
-  geom_errorbar(
-    aes(ymin = Proportion - SD, ymax = Proportion + SD), linewidth = 0.2,
-    position = position_dodge(0.05), color = "darkgrey"
-  ) +
-  theme_light() +
-  ylab("Relative proportion of EVs per density") +
-  xlab("Diameter (nm)") +
-  scale_x_continuous(breaks = seq(0, max(molten_data_sub$Size), by = 20)) +
-  scale_y_continuous(
-    breaks = seq(0, max(molten_data_sub$Proportion), by = 0.1),
-    limits = c(0, max(molten_data_sub$Proportion))
-  )
-# ----------------
+  # ----------------
+}
 
 # Create a dataset where replicates of each seeding status are summed together.
 # -----------------------------------------------------------------------------
@@ -307,8 +288,8 @@ molten_data$Size <- rep(data_sub$size, times = ncol(data_sub) - 1)
 
 # Add the standard deviation.
 # ---------------------------
-stats <- data_summary(molten_data, varname = "Proportion", groupnames = "Size")
-molten_data$SD <- rep(stats$sd, length(unique(molten_data$Seeds)))
+sd <- data_summary(molten_data, varname = "Proportion", groupnames = "Size")
+molten_data$SD <- rep(sd$sd, length(unique(molten_data$Seeds)))
 # ---------------------------
 
 # Create the plot.
@@ -330,53 +311,34 @@ ggplot(molten_data, aes(Size, Proportion, group = Seeds, color = Seeds)) +
   )
 # ----------------
 
-# Prep the data for plotting.
-# ---------------------------
-molten_data_sub <- molten_data[molten_data[[1]] == names[1], ]
-# ---------------------------
+for (i in seq_along(names)) {
+  # Prep the data for plotting.
+  # ---------------------------
+  molten_data_sub <- molten_data[molten_data[[1]] == names[i], ]
+  # ---------------------------
 
-# Create the plot.
-# ----------------
-ggplot(molten_data_sub, aes(Size, Proportion, group = Seeds, color = Seeds)) +
-  geom_smooth(se = FALSE, span = 0.2) +
-  geom_point(size = 0.75) +
-  geom_errorbar(
-    aes(ymin = Proportion - SD, ymax = Proportion + SD), linewidth = 0.2,
-    position = position_dodge(0.05), color = "darkgrey"
-  ) +
-  theme_light() +
-  ylab("Relative proportion of EVs per seeding status") +
-  xlab("Diameter (nm)") +
-  scale_x_continuous(breaks = seq(0, max(molten_data_sub$Size), by = 20)) +
-  scale_y_continuous(
-    breaks = seq(0, max(molten_data_sub$Proportion), by = 0.1),
-    limits = c(0, max(molten_data_sub$Proportion))
+  # Create the plot.
+  # ----------------
+  print(
+    ggplot(molten_data_sub, aes(Size, Proportion, group = Seeds, color = Seeds)) +
+      geom_smooth(se = FALSE, span = 0.2) +
+      geom_point(size = 0.75) +
+      geom_errorbar(
+        aes(ymin = Proportion - SD, ymax = Proportion + SD), linewidth = 0.2,
+        position = position_dodge(0.05), color = "darkgrey"
+      ) +
+      theme_light() +
+      ylab("Relative proportion of EVs per seeding status") +
+      xlab("Diameter (nm)") +
+      scale_x_continuous(breaks = seq(0, max(molten_data_sub$Size), by = 20)) +
+      scale_y_continuous(
+        breaks = seq(0, max(molten_data_sub$Proportion), by = 0.1),
+        limits = c(0, max(molten_data_sub$Proportion))
+      ) +
+      geom_vline(xintercept = c(stats[4, i], stats[3, i], stats[6, i]))
   )
-# ----------------
-
-# Prep the data for plotting.
-# ---------------------------
-molten_data_sub <- molten_data[molten_data[[1]] == names[2], ]
-# ---------------------------
-
-# Create the plot.
-# ----------------
-ggplot(molten_data_sub, aes(Size, Proportion, group = Seeds, color = Seeds)) +
-  geom_smooth(se = FALSE, span = 0.2) +
-  geom_point(size = 0.75) +
-  geom_errorbar(
-    aes(ymin = Proportion - SD, ymax = Proportion + SD), linewidth = 0.2,
-    position = position_dodge(0.05), color = "darkgrey"
-  ) +
-  theme_light() +
-  ylab("Relative proportion of EVs per seeding status") +
-  xlab("Diameter (nm)") +
-  scale_x_continuous(breaks = seq(0, max(molten_data_sub$Size), by = 20)) +
-  scale_y_continuous(
-    breaks = seq(0, max(molten_data_sub$Proportion), by = 0.1),
-    limits = c(0, max(molten_data_sub$Proportion))
-  )
-# ----------------
+  # ----------------
+}
 
 # Create a dataset where replicates of each density by seeding status are summed together.
 # ----------------------------------------------------------------------------------------
@@ -446,8 +408,8 @@ molten_data$Size <- rep(data_sub$size, times = ncol(data_sub) - 1)
 
 # Add the standard deviation.
 # ---------------------------
-stats <- data_summary(molten_data, varname = "Proportion", groupnames = "Size")
-molten_data$SD <- rep(stats$sd, length(unique(molten_data$`Density by Seeds`)))
+sd <- data_summary(molten_data, varname = "Proportion", groupnames = "Size")
+molten_data$SD <- rep(sd$sd, length(unique(molten_data$`Density by Seeds`)))
 # ---------------------------
 ```
 
