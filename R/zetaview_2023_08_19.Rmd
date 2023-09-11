@@ -15,7 +15,7 @@ All source code can be found at [https://github.com/eturkes/zetaview-EV-analysis
 # Global settings.
 # Needs to be in a separate chunk to apply to all other chunks.
 # -------------------------------------------------------------
-knitr::opts_chunk$set(fig.width = 7, fig.height = 5, dpi = 300, dev = "svglite") # Output high-quality figs.
+knitr::opts_chunk$set(fig.width = 9, fig.height = 5, dpi = 300, dev = "svglite") # Output high-quality figs.
 # -------------------------------------------------------------
 ```
 
@@ -142,7 +142,7 @@ for (i in seq_along(colnames(summed_data_proportion))) {
 
 # Prep the data for plotting.
 # ---------------------------
-data_sub <- summed_data_proportion[1:which(summed_data_proportion$size == 302.5), ] # Values level off at ~300nm.
+data_sub <- summed_data_proportion[1:which(summed_data_proportion$size == 502.5), ] # Values level off at ~500nm.
 molten_data <- melt(data_sub[ , -1], id.vars = NULL)
 colnames(molten_data) <- c("Density", "Proportion")
 molten_data$Size <- rep(data_sub$size, times = ncol(data_sub) - 1)
@@ -260,7 +260,7 @@ for (i in seq_along(colnames(summed_data_proportion))) {
 
 # Prep the data for plotting.
 # ---------------------------
-data_sub <- summed_data_proportion[1:which(summed_data_proportion$size == 302.5), ] # Values level off at ~300nm.
+data_sub <- summed_data_proportion[1:which(summed_data_proportion$size == 502.5), ] # Values level off at ~500nm.
 molten_data <- melt(data_sub[ , -1], id.vars = NULL)
 colnames(molten_data) <- c("Seeds", "Proportion")
 molten_data$Size <- rep(data_sub$size, times = ncol(data_sub) - 1)
@@ -380,7 +380,7 @@ for (i in seq_along(colnames(summed_data_proportion))) {
 
 # Prep the data for plotting.
 # ---------------------------
-data_sub <- summed_data_proportion[1:which(summed_data_proportion$size == 302.5), ] # Values level off at ~300nm.
+data_sub <- summed_data_proportion[1:which(summed_data_proportion$size == 502.5), ] # Values level off at ~500nm.
 molten_data <- melt(data_sub[ , -1], id.vars = NULL)
 colnames(molten_data) <- c("Density by Seeds", "Proportion")
 molten_data$Size <- rep(data_sub$size, times = ncol(data_sub) - 1)
@@ -391,9 +391,7 @@ molten_data$Size <- rep(data_sub$size, times = ncol(data_sub) - 1)
 sd <- data_summary(molten_data, varname = "Proportion", groupnames = "Size")
 molten_data$SD <- rep(sd$sd, length(unique(molten_data$`Density by Seeds`)))
 # ---------------------------
-```
 
-```{r, fig.width = 8}
 # Create the plot.
 # ----------------
 ggplot(molten_data, aes(Size, Proportion, group = `Density by Seeds`, color = `Density by Seeds`)) +
@@ -412,9 +410,7 @@ ggplot(molten_data, aes(Size, Proportion, group = `Density by Seeds`, color = `D
     limits = c(0, max(molten_data$Proportion))
   )
 # ----------------
-```
 
-```{r}
 # Calculate basic summary statistics.
 # -----------------------------------
 stats <- data.frame(matrix(nrow = 6, ncol = ncol(summed_data) - 1))
